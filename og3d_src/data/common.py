@@ -1,6 +1,8 @@
 import torch
 from einops import repeat
 
+
+# 测试语句，用于测试远程仓库
 def gen_seq_masks(seq_lens, max_len=None):
     """
     Args:
