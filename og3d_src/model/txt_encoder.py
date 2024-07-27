@@ -8,6 +8,28 @@ from easydict import EasyDict
 import torch
 import torch.nn as nn
 
+# 这段代码定义了一个名为GloveGRUEncoder的PyTorch神经网络模块，它是一个基于GloVe嵌入和GRU（门控循环单元）的文本编码器。此外，代码还包含了一个预备函数prepare_glove_tokenized_data，用于准备GloVe嵌入和分词数据。
+#
+# 以下是GloveGRUEncoder类的主要组成部分：
+#
+# 初始化方法(__init__):
+#
+# 定义了GRU层的参数，包括隐藏层大小和层数。
+# 加载预训练的GloVe嵌入向量。
+# 初始化GRU层。
+# 前向传播方法(forward):
+#
+# 使用GloVe嵌入向量将文本ID转换为嵌入表示。
+# 通过GRU层处理嵌入表示，输出最后的隐藏状态。
+# prepare_glove_tokenized_data函数的目的是从原始文本数据中提取词汇表，并将文本分词转换为基于GloVe嵌入的整数表示。这个函数执行以下步骤：
+#
+# 读取原始分词数据，并统计词汇表。
+# 从预训练的GloVe模型中加载词汇的嵌入向量。
+# 将词汇表中的每个词映射到一个整数ID。
+# 将原始文本数据中的每个词替换为其对应的整数ID。
+# 保存处理后的数据和词汇表。
+# 这个文本编码器可以用于各种需要文本嵌入的下游任务，如文本分类、情感分析或文本生成。通过结合GloVe嵌入和GRU层的序列建模能力，它可以有效地捕捉文本数据中的语义和顺序信息。
+
 class GloveGRUEncoder(nn.Module):
     def __init__(self, hidden_size, num_layers):
         super().__init__()

@@ -12,10 +12,26 @@ from .txt_encoder import GloveGRUEncoder
 from .mmt_module import MMT
 from .cmt_module import CMT
 
+
+# 获取多层感知机头：
+# 这个函数接收几个参数来配置多层感知机头的结构和行为：
+
+
+# 这有助于稳定训练过程。如果dropout大于0，它还会应用dropout（nn.Dropout(dropout)）来减少过拟合。
+# 最后，它通过第二个线性层（nn.Linear(hidden_size//2, output_size)）将隐藏层的输出映射到输出空间，得到最终的预测或分类结果。
+# 这个多层感知机头可以用于各种任务，比如在3D参考解析任务中，它可以将从3D场景中提取的特征转换为对3D物体的类别预测或位置回归。通过调整input_size、hidden_size和output_size，可以灵活地配置多层感知机头的结构，以满足不同任务的需求。
+
+# 这个函数的功能是创建一个多层感知机的结构和行为，
+# 接收参数分别为：输入的神经元数量，隐藏层的神经元数量，输出的神经元数量，应用于隐藏层的dropout比例，dropout=0表示不使用dropout
 def get_mlp_head(input_size, hidden_size, output_size, dropout=0):
+    # Sequential函数接收一个由层组成的列表，允许用户将多个计算层按照顺序组合成一个模型
     return nn.Sequential(
+        # 它通过一个线性层将输入特征映射到一个维度为 hidden_size// 2的隐藏层，Linear函数本身是没有hidden_size这个参数的，
+        # 这里是在表示第一层的输出是下一个线性层的输入，所以下一个Linear的输入参数也是hidden_size//2(并且向下取整)
                 nn.Linear(input_size, hidden_size//2),
                 nn.ReLU(),
+        # 使用层归一化来对隐藏层的输出进行归一化处理，它主要作用是将指定的数据归一化，即均值为0，方差为1
+        # 归一化
                 nn.LayerNorm(hidden_size//2, eps=1e-12),
                 nn.Dropout(dropout),
                 nn.Linear(hidden_size//2, output_size)
@@ -27,9 +43,12 @@ def freeze_bn(m):
         if isinstance(layer, nn.BatchNorm2d):
             layer.eval()
 
+
 class ReferIt3DNet(nn.Module):
     def __init__(self, config, device):
+        # 首先调用super().__init__()来执行父类nn.Module的初始化操作
         super().__init__()
+        # 创建config和device变量
         self.config = config
         self.device = device
 
@@ -164,14 +183,27 @@ class ReferIt3DNet(nn.Module):
         
         return result
 
+    # 这个函数compute_loss是用于计算模型在给定批次数据上的损失。
+    # 它接收两个参数：result和batch。result包含了模型的输出，而batch包含了与这些输出相对应的真实标签。
     def compute_loss(self, result, batch):
+        # 首先初始化一个字典losses来存储不同类型的损失，以及一个变量total_loss来存储所有损失的总和。
         losses = {}
         total_loss = 0
-        
+
+        # 3D物体检测损失（og3d_loss）：使用交叉熵损失函数（F.cross_entropy）计算3D物体检测的损失。
+        # 这个损失是 “模型对3D物体类别的预测” 和 “真实类别标签” 之间的差异。
+        # 计算出的损失被添加到losses字典中，并累加到total_loss。
+        # result['og3d_logits']是模型的输出，通常是一个多维张量，其中每一行代表一个样本，每一列代表一个类别预测的原始分数
+        # batch['tgt_obj_idxs']这是真实标签，它告诉模型每个样本的正确类别。这个张量中的每个元素是一个整数，对应于每个样本的正确类别索引
+        # 至于是不是0-1的独热编码我现在还没看懂
         og3d_loss = F.cross_entropy(result['og3d_logits'], batch['tgt_obj_idxs'])
         losses['og3d'] = og3d_loss
         total_loss += og3d_loss
 
+        # 3D物体分类损失（obj3d_clf_loss）：
+        # 如果配置参数中指定了obj3d_clf损失，则计算3D物体的分类损失。
+        # 使用交叉熵损失函数，但这次考虑了每个物体的损失，并且只对非填充物体（batch['obj_masks']）计算损失。
+        # 计算出的损失乘以配置参数中的权重，然后添加到losses字典和total_loss。
         if self.config.losses.obj3d_clf > 0:
             obj3d_clf_loss = F.cross_entropy(
                 result['obj3d_clf_logits'].permute(0, 2, 1), 
@@ -181,6 +213,10 @@ class ReferIt3DNet(nn.Module):
             losses['obj3d_clf'] = obj3d_clf_loss * self.config.losses.obj3d_clf
             total_loss += losses['obj3d_clf']
 
+        # 3D物体分类预测损失（Obj3D CLF Pre Loss）：
+        # 如果配置参数中指定了obj3d_clf_pre损失，则计算3D物体的分类预测损失。
+        # 这个损失的计算方式与3D物体分类损失相同，但是基于不同的模型输出（result['obj3d_clf_pre_logits']）。
+        # 同样，计算出的损失乘以配置参数中的权重，然后添加到losses字典和total_loss。
         if self.config.losses.obj3d_clf_pre > 0:
             obj3d_clf_pre_loss = F.cross_entropy(
                 result['obj3d_clf_pre_logits'].permute(0, 2, 1), 
@@ -190,6 +226,10 @@ class ReferIt3DNet(nn.Module):
             losses['obj3d_clf_pre'] = obj3d_clf_pre_loss * self.config.losses.obj3d_clf_pre
             total_loss += losses['obj3d_clf_pre']
 
+        # 3D物体定位损失（Obj3D REG Loss）：
+        # 如果配置参数中指定了obj3d_reg损失，则计算3D物体的定位损失。
+        # 使用均方误差损失函数（F.mse_loss）来衡量模型预测的物体位置（result['obj3d_loc_preds']）和真实物体位置（batch['obj_locs'][:, :, :3]）之间的差异。
+        # 同样，只对非填充物体计算损失，并且计算出的损失乘以配置参数中的权重，然后添加到losses字典和total_loss。
         if self.config.losses.obj3d_reg > 0:
             obj3d_reg_loss = F.mse_loss(
                 result['obj3d_loc_preds'], batch['obj_locs'][:, :, :3],  reduction='none'
@@ -198,6 +238,11 @@ class ReferIt3DNet(nn.Module):
             losses['obj3d_reg'] = obj3d_reg_loss * self.config.losses.obj3d_reg
             total_loss += losses['obj3d_reg']
 
+        # 文本分类损失（Txt CLF Loss）：
+        # 如果配置参数中指定了txt_clf损失，则计算文本分类损失。
+        # 使用交叉熵损失函数，基于模型对文本类别的预测（result['txt_clf_logits']）和真实文本类别（batch['tgt_obj_classes']）之间的差异。
+        # 计算出的损失乘以配置参数中的权重，然后添加到losses字典和total_loss。
+        # 最后，total_loss被添加到losses字典中，标记为'total'。这个字典包含了所有单独的损失以及它们的总和，然后返回给调用者。
         if self.config.losses.txt_clf > 0:
             txt_clf_loss = F.cross_entropy(
                 result['txt_clf_logits'], batch['tgt_obj_classes'],  reduction='mean'

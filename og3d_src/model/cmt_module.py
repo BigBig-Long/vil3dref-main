@@ -2,14 +2,28 @@ import copy
 import numpy as np
 from typing import Optional
 import time
-
 import einops
-
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 
+# 这段代码定义了一个名为CMT（可能代表“组合模型Transformer”）的PyTorch神经网络模块，
+# 它是一个基于Transformer的编码器-解码器模型，专门用于处理空间信息。
+# 这个模型结合了Transformer解码器层和空间注意力机制，用于处理点云数据和文本描述。
+# 以下是CMT类的主要组成部分：
 
+# 位置编码计算方法(calc_pairwise_locs):
+# 计算对象之间的成对位置关系。
+# 支持多种类型的成对位置关系计算，如基于中心的距离、基于底部的距离等。
+# 前向传播方法(forward):
+# 接受文本嵌入、文本掩码、对象嵌入、对象位置和对象掩码作为输入。
+# 计算对象之间的成对位置关系。
+# 通过解码器层逐层处理对象嵌入，结合文本嵌入和位置信息。
+# 如果需要，输出所有隐藏状态和注意力矩阵。
+# 这个模型是专门为处理3D场景理解任务而设计的，如3D物体检测或3D场景分割。
+# 它通过结合Transformer的强大建模能力和空间注意力机制，能够有效地处理点云数据和文本描述，从而在3D理解任务中取得更好的性能。
+
+# 这个函数接收一个字符串参数，根据接收的字符串返回对应的激活函数，如果没有选择指定的函数，会抛出异常
 def _get_activation_fn(activation):
     """Return an activation function given a string"""
     if activation == "relu":
@@ -20,21 +34,38 @@ def _get_activation_fn(activation):
         return F.glu
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
 
+# 这个函数的目的是创建一个包含指定数量（N）个模块副本的nn.ModuleList
 def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
-
+# Transformer解码层实现
+# nn.Module 是所有神经网络模块的基类。模型都应该继承这个类，并实现 forward 方法。
 class TransformerDecoderLayer(nn.Module):
 
+    # 初始化方法(__init__):
+    # d_model：表示模型的输入总维度(官方给出的解释是Total dimension of the model，即模型的输入总维度，每个头输入的维度×头的数量)
+    # nhead： 表示多头注意力机制中的头的数量。
+    # dim_feedforward： 表示前馈网络中隐藏层的维度，默认为2048。
+    # dropout=0.1 ： 表示应用于各种层的dropout比例，默认为 0.1。
+    # activation="relu"：表示前馈网络中使用的激活函数，默认为"relu"。
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu"):
+        # 网络结构
         super().__init__()
+        # 下面使用 MultiheadAttention函数 创建了两个多头注意力模块“self.self_attn”和“self.multihead_attn”
+        # 它们用于在编码器层中处理自注意力（self - attention）和交叉注意力（cross - attention）。
+        # 接收 嵌入维度、头数、dropout比例（防止过拟合）、batch_first=True的意思是
+
+        # 当batch_first = True时，输入和输出的张量形状将是(batch_size, sequence_length,feature_dim)，
+        # 其中batch_size是批量大小，sequence_length是序列的长度（比如句子的单词数），feature_dim是特征维度（比如词向量的维度）。
+        # 例如，对于一个句子批量的输入，如果batch_first = True，张量的形状将是(batch_size, seq_len,
+        # embedding_dim)，其中batch_size是批量的句子数量，seq_len是每个句子的单词数量，embedding_dim是每个单词的嵌入维度。
         self.self_attn = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
         self.multihead_attn = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
-        # Implementation of Feedforward model
+        # Implementation of Feedforward model(前馈模型的实现)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
         self.linear2 = nn.Linear(dim_feedforward, d_model)
@@ -48,6 +79,26 @@ class TransformerDecoderLayer(nn.Module):
 
         self.activation = _get_activation_fn(activation)
 
+    # 前向传播，
+    # 这个函数接收几个参数，这些参数代表了Transformer层在处理序列数据时的输入和掩码：
+    # tgt：目标序列的表示，通常是上一个时间步的输出或解码器层的输入。
+    # memory：记忆序列的表示，通常是编码器层的输出，用于解码器层的交叉注意力机制。
+    # tgt_mask：目标序列的注意力掩码，用于屏蔽未来的位置。
+    # memory_mask：记忆序列的注意力掩码，用于屏蔽某些位置的注意力。
+    # tgt_key_padding_mask：目标序列的键填充掩码，用于屏蔽填充位置的注意力。
+    # memory_key_padding_mask：记忆序列的键填充掩码，用于屏蔽填充位置的注意力。
+    # 在函数内部，首先对目标序列tgt进行归一化处理（self.norm1(
+    #     tgt)）。然后，使用自注意力机制（self.self_attn）对归一化后的目标序列进行注意力计算，得到注意力矩阵和更新后的目标序列tgt2。接着，将更新后的目标序列与原始目标序列相加，并应用dropout（self.dropout1(
+    #     tgt2)）。
+    #
+    # 然后，对更新后的目标序列再次进行归一化处理（self.norm2(
+    #     tgt)），并使用交叉注意力机制（self.multihead_attn）对目标序列和记忆序列进行注意力计算，得到注意力矩阵和更新后的目标序列tgt2。再次将更新后的目标序列与原始目标序列相加，并应用dropout（self.dropout2(
+    #     tgt2)）。
+    # 接下来，对更新后的目标序列进行第三次归一化处理（self.norm3(
+    #     tgt)），并通过前馈网络（包括两个线性层和激活函数）进行处理，得到更新后的目标序列tgt2。最后，将更新后的目标序列与原始目标序列相加，并应用dropout（self.dropout3(
+    #     tgt2)）。
+    # 最终，函数返回更新后的目标序列tgt，以及自注意力和交叉注意力的注意力矩阵。
+    # 这个函数是Transformer模型中非常核心的部分，它通过自注意力和交叉注意力机制，以及前馈网络，来更新序列的表示，从而实现对序列数据的深层次理解和转换。
     def forward(
         self, tgt, memory,
         tgt_mask: Optional[Tensor] = None,
@@ -73,7 +124,9 @@ class TransformerDecoderLayer(nn.Module):
         tgt = tgt + self.dropout3(tgt2)
         return tgt, self_attn_matrices, cross_attn_matrices
 
+# 这个模块的目的是在Transformer模型中实现多头注意力机制，并且将空间信息整合到注意力计算中
 class MultiHeadAttentionSpatial(nn.Module):
+    # 这里相对于
     def __init__(
         self, d_model, n_head, dropout=0.1, spatial_multihead=True, spatial_dim=5,
         spatial_attn_fusion='mul',
@@ -105,6 +158,7 @@ class MultiHeadAttentionSpatial(nn.Module):
             self.lang_cond_fc = nn.Linear(d_model, self.spatial_n_head * (spatial_dim + 1))
         else:
             raise NotImplementedError('unsupported spatial_attn_fusion %s' % (self.spatial_attn_fusion))
+
 
     def forward(self, q, k, v, pairwise_locs, key_padding_mask=None, txt_embeds=None):
         residual = q
@@ -158,7 +212,8 @@ class MultiHeadAttentionSpatial(nn.Module):
         output = self.dropout(self.fc(output))
         output = self.layer_norm(output + residual)
         return output, fused_attn
-    
+
+
 class TransformerSpatialDecoderLayer(TransformerDecoderLayer):
     def __init__(
         self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",

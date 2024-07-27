@@ -6,6 +6,28 @@ import einops
 
 from .backbone.point_net_pp import PointNetPP
 
+# 这段代码定义了三个用于对象编码的神经网络模块：GTObjEncoder、PcdObjEncoder和ObjColorEncoder。
+# 这些模块分别用于处理不同的对象特征，并将它们转换为嵌入向量。
+#
+# GTObjEncoder:
+# 这个模块用于处理对象的类别或特征向量。
+# 如果配置参数onehot_ft为True，则使用嵌入层将类别转换为嵌入向量。
+# 否则，使用全连接层将特征向量转换为嵌入向量。
+# 最后，应用层规范化和dropout。
+# PcdObjEncoder:
+#
+# 这个模块用于处理点云数据。
+# 它使用PointNet++架构来提取点云的局部和全局特征。
+# 由于PointNet++的实现方式，代码中注释掉的部分是为了减少GPU内存的使用。
+# 对每个对象分别处理点云数据，然后将结果堆叠起来。
+# ObjColorEncoder:
+#
+# 这个模块用于处理对象的颜色信息。
+# 它将颜色信息视为高斯混合模型（GMM）的权重和均值。
+# 通过全连接层处理颜色均值，并与权重相乘，然后求和得到嵌入向量。
+# 这些模块可以单独或组合使用，以处理不同类型的数据，并在多模态任务中提供对象的嵌入表示。例如，在3D物体检测或3D场景理解任务中，可以同时使用点云编码器和颜色编码器来获取更丰富的对象特征。
+
+
 class GTObjEncoder(nn.Module):
     def __init__(self, config, hidden_size):
         super().__init__()

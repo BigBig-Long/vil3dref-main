@@ -7,6 +7,27 @@ import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 
+# 这段代码定义了一个名为MMT（可能代表“多模态Transformer”）的PyTorch神经网络模块，
+# 它是一个基于Transformer的编码器模型，专门用于处理多模态数据，包括文本和对象嵌入。
+# 这个模型通过结合Transformer的强大建模能力，能够有效地处理和融合不同模态的数据。
+# 以下是MMT类的主要组成部分：
+# 初始化方法(__init__):
+# 根据配置参数创建Transformer编码器层。
+# 创建位置编码层，用于处理对象的位置信息。
+# 根据配置参数决定是否为每一层都创建一个位置编码层，或者所有层共享一个位置编码层。
+# 初始化权重。
+# 权重初始化方法(_init_weights):
+# 初始化线性层、嵌入层和层规范化的权重。
+# 前向传播方法(forward):
+# 接受文本嵌入、文本掩码、对象嵌入、对象位置和对象掩码作为输入。
+# 将文本嵌入和对象嵌入拼接在一起，并创建相应的padding掩码。
+# 通过编码器层逐层处理拼接后的嵌入，结合对象的位置信息。
+# 如果需要，输出所有隐藏状态。
+# 这个模型是专门为处理多模态数据而设计的，如文本描述和3D点云数据的结合。
+# 它通过Transformer编码器层有效地融合了文本和空间信息，可以用于各种多模态任务，如3D物体检测或3D场景理解。
+
+
+# 这个函数接收一个字符串参数，根据接收的字符串返回对应的激活函数，如果没有选择指定的函数，会抛出异常
 def _get_activation_fn(activation):
     """Return an activation function given a string"""
     if activation == "relu":
@@ -17,12 +38,12 @@ def _get_activation_fn(activation):
         return F.glu
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
 
+# 这个函数的目的是创建一个包含指定数量（N）个模块副本的nn.ModuleList
 def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
-
+# Transformer编码层实现
 class TransformerEncoderLayer(nn.Module):
-
     def __init__(
         self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
         activation="relu"
