@@ -1,14 +1,10 @@
-import torch, math
-from torch.optim.optimizer import Optimizer
-import itertools as it
-from .lookahead import *
-from .ralamb import * 
+import torch, math  # 导入torch和math库
+from torch.optim.optimizer import Optimizer  # 从torch.optim模块导入Optimizer类
+import itertools as it  # 导入itertools库，通常用于创建迭代器
+from .lookahead import *  # 从同一目录下的lookahead模块导入所有内容
+from .ralamb import *  # 从同一目录下的ralamb模块导入所有内容
 
-# RAdam + LARS + LookAHead
-
-# Lookahead implementation from https://github.com/lonePatient/lookahead_pytorch/blob/master/optimizer.py
-# RAdam + LARS implementation from https://gist.github.com/redknightlois/c4023d393eb8f92bb44b2ab582d7ec20
-
+# 定义RangerLars函数，该函数接收优化器参数和Lookahead的参数
 def RangerLars(params, alpha=0.5, k=6, *args, **kwargs):
-     ralamb = Ralamb(params, *args, **kwargs)
-     return Lookahead(ralamb, alpha, k)
+    ralamb = Ralamb(params, *args, **kwargs)  # 创建一个Ralamb实例
+    return Lookahead(ralamb, alpha, k)  # 将Ralamb实例封装进Lookahead策略，并返回
