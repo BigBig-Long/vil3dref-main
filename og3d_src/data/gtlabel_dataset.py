@@ -123,6 +123,55 @@ class GTLabelDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    # 定义一个私有方法_get_obj_inputs，用于处理目标物体的索引和相关物体信息
+    def _get_obj_inputs(self, obj_labels, obj_locs, obj_colors, obj_ids, tgt_obj_idx, theta=None):
+        # 获取目标物体的类型
+        tgt_obj_type = obj_labels[tgt_obj_idx]
+        # 如果设置了最大物体数量限制，并且当前物体数量超过了这个限制
+        if (self.max_obj_len is not None) and (len(obj_labels) > self.max_obj_len):
+            # 初始化一个列表，包含目标物体的索引
+            selected_obj_idxs = [tgt_obj_idx]
+            # 初始化一个列表，用于存放剩余物体的索引
+            remained_obj_idxs = []
+            # 遍历所有物体标签和索引
+            for kobj, klabel in enumerate(obj_labels):
+                # 如果当前物体不是目标物体
+                if kobj != tgt_obj_idx:
+                    # 如果当前物体的标签与目标物体相同，则将其索引添加到selected_obj_idxs
+                    if klabel == tgt_obj_type:
+                        selected_obj_idxs.append(kobj)
+                    # 否则，将其索引添加到remained_obj_idxs
+                    else:
+                        remained_obj_idxs.append(kobj)
+            # 如果选中的物体数量小于最大限制数量
+            if len(selected_obj_idxs) < self.max_obj_len:
+                # 对剩余物体索引列表进行随机排序
+                random.shuffle(remained_obj_idxs)
+                # 从剩余物体中添加足够的索引，以达到最大限制数量
+                selected_obj_idxs += remained_obj_idxs[:self.max_obj_len - len(selected_obj_idxs)]
+            # 根据选中的索引重新构建物体标签、位置、颜色和ID的列表
+            obj_labels = [obj_labels[i] for i in selected_obj_idxs]
+            obj_locs = [obj_locs[i] for i in selected_obj_idxs]
+            obj_colors = [obj_colors[i] for i in selected_obj_idxs]
+            obj_ids = [obj_ids[i] for i in selected_obj_idxs]
+        # 设置目标物体索引为0（可能是为了表示目标物体在新列表中的位置）
+        tgt_obj_idx = 0
+        # 将物体位置和颜色转换为NumPy数组
+        obj_locs = np.array(obj_locs)
+        obj_colors = np.array(obj_colors)
+        # 如果提供了旋转角度theta，并且角度不为0
+        if (theta is not None) and (theta != 0):
+            # 定义一个旋转矩阵
+            rot_matrix = np.array([
+                [np.cos(theta), -np.sin(theta), 0],
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1]
+            ], dtype=np.float32)
+            # 将旋转矩阵应用到物体位置的前三个坐标上（可能是x, y, z坐标）
+            obj_locs[:, :3] = np.matmul(obj_locs[:, :3], rot_matrix.transpose())
+        # 返回处理后的物体标签、位置、颜色、ID和目标物体索引
+        return obj_labels, obj_locs, obj_colors, obj_ids, tgt_obj_idx
+
     # 数据获取函数，根据索引返回单个数据项
     def __getitem__(self, idx):
         # 从数据列表中获取指定索引的数据条目

@@ -161,6 +161,9 @@ class GTLabelPcdDataset(GTLabelDataset):
         # 获取目标对象索引和类型
         tgt_obj_idx = item['target_id']
         tgt_obj_type = item['instance_type']
+
+        
+
         # 根据是否有gt_scan_dir和iou_replace_gt的设置，获取点云数据
         if self.gt_scan_dir is None or item['max_iou'] > self.iou_replace_gt:
             obj_pcds = self.get_scan_pcd_data(scan_id)
