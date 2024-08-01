@@ -35,6 +35,9 @@ def set_cuda(opts) -> Tuple[bool, int, torch.device]:
         device = torch.device("cuda")  # 使用默认CUDA设备
         n_gpu = torch.cuda.device_count()  # 获取可用的CUDA设备数
     return default_gpu, n_gpu, device
+# default_gpu (bool): 表明当前GPU是否是主（默认）GPU。
+# n_gpu (int): 可用的GPU数量。
+# device (torch.device): 表明当前进程应使用的设备。
 
 def wrap_model(
     model: torch.nn.Module, device: torch.device, local_rank: int

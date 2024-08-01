@@ -5,22 +5,49 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="192ec077-6400-4d4f-ba5a-eded33941062" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/config.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/coreml/fill-mask/float32_model.mlpackage/Data/com.apple.CoreML/model.mlmodel" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/coreml/fill-mask/float32_model.mlpackage/Data/com.apple.CoreML/weights/weight.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/coreml/fill-mask/float32_model.mlpackage/Manifest.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/flax_model.msgpack" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/model.onnx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/model.safetensors" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/pytorch_model.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/rust_model.ot" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/tf_model.h5" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/tokenizer.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/tokenizer_config.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/moxing/bert-base-uncased/vocab.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/data/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/common.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/data/gtlabel_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/gtlabel_dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/data/gtlabelpcd_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/gtlabelpcd_dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/data/gtpcd_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/gtpcd_dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/data/utterances.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/utterances.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/backbone/point_net_pp.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/backbone/point_net_pp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/cmt_module.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/cmt_module.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_modules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pytorch_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pytorch_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/mmt_module.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/mmt_module.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/obj_encoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/obj_encoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/referit3d_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/referit3d_net.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/referit3d_net_mix.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/referit3d_net_mix.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/txt_encoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/txt_encoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/adamw.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/adamw.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/lookahead.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/lookahead.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/misc.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/misc.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/radam.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/radam.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/ralamb.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/ralamb.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/rangerlars.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/rangerlars.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/optim/sched.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/optim/sched.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/train.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/train_mix.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/train_mix.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/train_pcd_backbone.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/train_pcd_backbone.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/utils/distributed.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/utils/distributed.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/utils/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/utils/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/utils/misc.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/utils/misc.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/utils/save.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/utils/save.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/prepare_nr3d_annos.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/prepare_nr3d_annos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/prepare_scanrefer_annos.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/prepare_scanrefer_annos.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/precompute_instance_bboxes.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/precompute_instance_bboxes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/precompute_instance_colors.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/precompute_instance_colors.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/precompute_pred_instance_colors.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/precompute_pred_instance_colors.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/precompute_scene_locs.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/precompute_scene_locs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/prepare_scannet_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/prepare_scannet_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/preprocess/scannetv2/scannetv2_label_glovefts.py" beforeDir="false" afterPath="$PROJECT_DIR$/preprocess/scannetv2/scannetv2_label_glovefts.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,7 +55,10 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/moxing/bert-base-uncased" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
@@ -40,7 +70,9 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/Python/Python_Workplace/vil3dref_main_second&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -54,8 +86,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-PY-241.14494.241" />
-        <option value="bundled-python-sdk-0509580d9d50-28c9f5db9ffe-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.14494.241" />
+        <option value="bundled-python-sdk-d68999036c7f-b11f5e8da5ad-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-233.14475.56" />
       </set>
     </attachedChunks>
   </component>
@@ -69,6 +100,12 @@
       <updated>1721886342292</updated>
       <workItem from="1721886343365" duration="1737000" />
       <workItem from="1721892671706" duration="38000" />
+      <workItem from="1722405544296" duration="991000" />
+      <workItem from="1722406554877" duration="109000" />
+      <workItem from="1722407309123" duration="1601000" />
+      <workItem from="1722444006903" duration="17721000" />
+      <workItem from="1722522560150" duration="4722000" />
+      <workItem from="1722529060742" duration="37000" />
     </task>
     <servers />
   </component>

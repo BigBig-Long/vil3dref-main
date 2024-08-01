@@ -25,18 +25,20 @@ import torch.nn.functional as F
 
 # 这个函数接收一个字符串参数，根据接收的字符串返回对应的激活函数，如果没有选择指定的函数，会抛出异常
 def _get_activation_fn(activation):
-    """Return an activation function given a string"""
+    """根据字符串返回一个激活函数"""
     if activation == "relu":
-        return F.relu
+        return F.relu  # 如果激活函数是"relu"，返回ReLU激活函数
     if activation == "gelu":
-        return F.gelu
+        return F.gelu  # 如果激活函数是"gelu"，返回GELU激活函数
     if activation == "glu":
-        return F.glu
-    raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
+        return F.glu  # 如果激活函数是"glu"，返回GLU激活函数
+    raise RuntimeError(F"activation should be relu/gelu, not {activation}.")  # 如果激活函数不是支持的类型，抛出运行时错误
+
 
 # 这个函数的目的是创建一个包含指定数量（N）个模块副本的nn.ModuleList
 def _get_clones(module, N):
-    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+    """返回一个包含指定数量（N）个模块副本的nn.ModuleList"""
+    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])  # 对于每个副本，使用深拷贝创建模块
 
 # Transformer解码层实现
 # nn.Module 是所有神经网络模块的基类。模型都应该继承这个类，并实现 forward 方法。
@@ -216,197 +218,232 @@ class MultiHeadAttentionSpatial(nn.Module):
 
 class TransformerSpatialDecoderLayer(TransformerDecoderLayer):
     def __init__(
-        self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
-        spatial_multihead=True, spatial_dim=5, spatial_attn_fusion='mul'
+            self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
+            spatial_multihead=True, spatial_dim=5, spatial_attn_fusion='mul'
     ):
         super().__init__(
             d_model, nhead, dim_feedforward=dim_feedforward, dropout=dropout, activation=activation
-        )
-        del self.self_attn
+        )  # 调用父类的构造函数，初始化基本的变换器解码层参数
+
+        del self.self_attn  # 删除继承自基类的自注意力模块
+
         self.self_attn = MultiHeadAttentionSpatial(
-            d_model, nhead, dropout=dropout, 
-            spatial_multihead=spatial_multihead, 
+            d_model, nhead, dropout=dropout,
+            spatial_multihead=spatial_multihead,
             spatial_dim=spatial_dim,
             spatial_attn_fusion=spatial_attn_fusion,
-        )
+        )  # 创建一个新的多头空间注意力模块，支持空间维度和特定的融合方式
 
     def forward(
-        self, tgt, memory, tgt_pairwise_locs,
-        tgt_mask: Optional[Tensor] = None,
-        memory_mask: Optional[Tensor] = None,
-        tgt_key_padding_mask: Optional[Tensor] = None,
-        memory_key_padding_mask: Optional[Tensor] = None,
+            self, tgt, memory, tgt_pairwise_locs,
+            tgt_mask: Optional[Tensor] = None,
+            memory_mask: Optional[Tensor] = None,
+            tgt_key_padding_mask: Optional[Tensor] = None,
+            memory_key_padding_mask: Optional[Tensor] = None,
     ):
+        tgt2 = self.norm1(tgt)  # 对目标向量进行层归一化
 
-        tgt2 = self.norm1(tgt)
+        # 使用自定义的空间多头注意力模块处理目标向量
         tgt2, self_attn_matrices = self.self_attn(
-            tgt2, tgt2, tgt2, tgt_pairwise_locs,
-            key_padding_mask=tgt_key_padding_mask,
-            txt_embeds=memory[:, 0],
+            tgt2, tgt2, tgt2, tgt_pairwise_locs,  # 输入和目标位置信息
+            key_padding_mask=tgt_key_padding_mask,  # 目标键掩码，用于屏蔽无效的输入部分
+            txt_embeds=memory[:, 0],  # 使用记忆体的第一个元素作为文本嵌入
         )
-        tgt = tgt + self.dropout1(tgt2)
-        tgt2 = self.norm2(tgt)
+        tgt = tgt + self.dropout1(tgt2)  # 应用dropout并加上原始目标向量，实现残差连接
+
+        tgt2 = self.norm2(tgt)  # 对更新后的目标向量再次进行层归一化
+        # 使用标准多头注意力模块处理交叉注意力
         tgt2, cross_attn_matrices = self.multihead_attn(
-            query=tgt2, key=memory,
-            value=memory, attn_mask=memory_mask,
-            key_padding_mask=memory_key_padding_mask
+            query=tgt2, key=memory, value=memory,  # 使用记忆体作为键和值
+            attn_mask=memory_mask,  # 可选的记忆体掩码，用于屏蔽无效的记忆部分
+            key_padding_mask=memory_key_padding_mask  # 记忆体键掩码
         )
-        tgt = tgt + self.dropout2(tgt2)
-        tgt2 = self.norm3(tgt)
-        tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt2))))
-        tgt = tgt + self.dropout3(tgt2)
-        return tgt, self_attn_matrices, cross_attn_matrices
+        tgt = tgt + self.dropout2(tgt2)  # 应用dropout并加上原始目标向量，实现第二个残差连接
+
+        tgt2 = self.norm3(tgt)  # 对最新的目标向量进行第三次层归一化
+        tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt2))))  # 应用两层前馈网络，包括激活函数和dropout
+        tgt = tgt + self.dropout3(tgt2)  # 最终的残差连接
+
+        return tgt, self_attn_matrices, cross_attn_matrices  # 返回更新的目标向量和注意力矩阵
 
 
 class CMT(nn.Module):
 
     def __init__(self, config):
-        super().__init__()
-        self.config = config
+        super().__init__()  # 调用父类的构造函数，初始化基类
+        self.config = config  # 保存传入的配置对象
 
-        if self.config.spatial_dec:
-            decoder_class = TransformerSpatialDecoderLayer
+        if self.config.spatial_dec:  # 检查配置中是否启用了空间解码器
+            decoder_class = TransformerSpatialDecoderLayer  # 如果启用，使用空间解码器类
             kwargs = {
-                'spatial_dim': config.spatial_dim,
-                'spatial_multihead': config.spatial_multihead,
-                'spatial_attn_fusion': config.spatial_attn_fusion,
+                'spatial_dim': config.spatial_dim,  # 设置空间维度
+                'spatial_multihead': config.spatial_multihead,  # 设置空间多头注意力的头数
+                'spatial_attn_fusion': config.spatial_attn_fusion,  # 设置空间注意力融合方式
             }
         else:
-            decoder_class = TransformerDecoderLayer
-            kwargs = {}
+            decoder_class = TransformerDecoderLayer  # 否则，使用普通的Transformer解码器类
+            kwargs = {}  # 不需要额外参数
 
+        # 创建解码器层
         decoder_layer = decoder_class(
             config.hidden_size, config.num_attention_heads,
             dim_feedforward=2048, dropout=0.1, activation='gelu', **kwargs
         )
+        # 克隆解码器层，根据配置中的层数重复生成
         self.layers = _get_clones(decoder_layer, config.num_layers)
 
+        # 初始化位置编码层
         loc_layer = nn.Sequential(
-            nn.Linear(config.dim_loc, config.hidden_size),
-            nn.LayerNorm(config.hidden_size),
+            nn.Linear(config.dim_loc, config.hidden_size),  # 线性层，将位置维度映射到隐藏维度
+            nn.LayerNorm(config.hidden_size),  # 层归一化
         )
+
+        # 根据对象位置编码的配置，决定位置层的数量
         if self.config.obj_loc_encoding in ['same_0', 'same_all']:
-            num_loc_layers = 1
+            num_loc_layers = 1  # 如果所有层共用一个位置编码层，只需要一个
         elif self.config.obj_loc_encoding == 'diff_all':
-            num_loc_layers = config.num_layers
+            num_loc_layers = config.num_layers  # 如果每层使用不同的位置编码层，需要多个
+
+        # 克隆位置编码层
         self.loc_layers = _get_clones(loc_layer, num_loc_layers)
 
+        # 应用初始化权重的函数
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
         """Initialize the weights"""
         if isinstance(module, nn.Linear):
-            # Slightly different from the TF version which uses truncated_normal for initialization
-            # cf https://github.com/pytorch/pytorch/pull/5617
-            module.weight.data.normal_(mean=0.0, std=0.02)
+            # 如果模块是线性层
+            module.weight.data.normal_(mean=0.0, std=0.02)  # 使用均值为0，标准差为0.02的正态分布初始化权重
             if module.bias is not None:
-                module.bias.data.zero_()
+                module.bias.data.zero_()  # 如果有偏置项，将其初始化为0
+
         elif isinstance(module, nn.Embedding):
-            module.weight.data.normal_(mean=0.0, std=0.02)
+            # 如果模块是嵌入层
+            module.weight.data.normal_(mean=0.0, std=0.02)  # 使用均值为0，标准差为0.02的正态分布初始化权重
             if module.padding_idx is not None:
-                module.weight.data[module.padding_idx].zero_()
+                module.weight.data[module.padding_idx].zero_()  # 如果存在填充索引，将该位置的权重设置为0
+
         elif isinstance(module, nn.LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
+            # 如果模块是层归一化
+            module.bias.data.zero_()  # 初始化偏置为0
+            module.weight.data.fill_(1.0)  # 将权重填充为1
 
     def calc_pairwise_locs(self, obj_centers, obj_whls, eps=1e-10, pairwise_rel_type='center'):
         if pairwise_rel_type == 'mlp':
-            obj_locs = torch.cat([obj_centers, obj_whls], 2)
+            # 如果关系类型为 'mlp'
+            obj_locs = torch.cat([obj_centers, obj_whls], 2)  # 将对象的中心和宽高深信息拼接
             pairwise_locs = torch.cat(
                 [einops.repeat(obj_locs, 'b l d -> b l x d', x=obj_locs.size(1)),
-                einops.repeat(obj_locs, 'b l d -> b x l d', x=obj_locs.size(1))],
+                 einops.repeat(obj_locs, 'b l d -> b x l d', x=obj_locs.size(1))],
                 dim=3
             )
-            return pairwise_locs
+            return pairwise_locs  # 返回拼接后的位置信息
 
+        # 计算对象中心之间的向量差
         pairwise_locs = einops.repeat(obj_centers, 'b l d -> b l 1 d') \
-            - einops.repeat(obj_centers, 'b l d -> b 1 l d')
-        pairwise_dists = torch.sqrt(torch.sum(pairwise_locs**2, 3) + eps) # (b, l, l)
+                        - einops.repeat(obj_centers, 'b l d -> b 1 l d')
+        pairwise_dists = torch.sqrt(torch.sum(pairwise_locs ** 2, 3) + eps)  # 计算欧式距离
+
         if self.config.spatial_dist_norm:
+            # 如果配置中指定了距离归一化
             max_dists = torch.max(pairwise_dists.view(pairwise_dists.size(0), -1), dim=1)[0]
             norm_pairwise_dists = pairwise_dists / einops.repeat(max_dists, 'b -> b 1 1')
         else:
-            norm_pairwise_dists = pairwise_dists
+            norm_pairwise_dists = pairwise_dists  # 不进行归一化
 
         if self.config.spatial_dim == 1:
-            return norm_pairwise_dists.unsqueeze(3)
-            
-        pairwise_dists_2d = torch.sqrt(torch.sum(pairwise_locs[..., :2]**2, 3)+eps)
+            return norm_pairwise_dists.unsqueeze(3)  # 如果空间维度为1，则在最后一个维度上增加一个维度
+
+        # 计算二维距离
+        pairwise_dists_2d = torch.sqrt(torch.sum(pairwise_locs[..., :2] ** 2, 3) + eps)
+
+        # 如果关系类型为 'center'
         if pairwise_rel_type == 'center':
+            # 计算相对位置和方向
             pairwise_locs = torch.stack(
-                [norm_pairwise_dists, pairwise_locs[..., 2]/pairwise_dists, 
-                pairwise_dists_2d/pairwise_dists, pairwise_locs[..., 1]/pairwise_dists_2d,
-                pairwise_locs[..., 0]/pairwise_dists_2d],
+                [norm_pairwise_dists, pairwise_locs[..., 2] / pairwise_dists,
+                 pairwise_dists_2d / pairwise_dists, pairwise_locs[..., 1] / pairwise_dists_2d,
+                 pairwise_locs[..., 0] / pairwise_dists_2d],
                 dim=3
             )
+        # 如果关系类型为 'vertical_bottom'
         elif pairwise_rel_type == 'vertical_bottom':
             bottom_centers = torch.clone(obj_centers)
-            bottom_centers[:, :, 2] -= obj_whls[:, :, 2]
+            bottom_centers[:, :, 2] -= obj_whls[:, :, 2]  # 计算底部中心的坐标
             bottom_pairwise_locs = einops.repeat(bottom_centers, 'b l d -> b l 1 d') \
-                - einops.repeat(bottom_centers, 'b l d -> b 1 l d')
-            bottom_pairwise_dists = torch.sqrt(torch.sum(bottom_pairwise_locs**2, 3) + eps) # (b, l, l)
-            bottom_pairwise_dists_2d = torch.sqrt(torch.sum(bottom_pairwise_locs[..., :2]**2, 3)+eps)
+                                   - einops.repeat(bottom_centers, 'b l d -> b 1 l d')
+            bottom_pairwise_dists = torch.sqrt(torch.sum(bottom_pairwise_locs ** 2, 3) + eps)
+            bottom_pairwise_dists_2d = torch.sqrt(torch.sum(bottom_pairwise_locs[..., :2] ** 2, 3) + eps)
+            # 计算相对位置和方向
             pairwise_locs = torch.stack(
-                [norm_pairwise_dists, 
-                bottom_pairwise_locs[..., 2]/bottom_pairwise_dists, 
-                bottom_pairwise_dists_2d/bottom_pairwise_dists, 
-                pairwise_locs[..., 1]/pairwise_dists_2d,
-                pairwise_locs[..., 0]/pairwise_dists_2d],
+                [norm_pairwise_dists,
+                 bottom_pairwise_locs[..., 2] / bottom_pairwise_dists,
+                 bottom_pairwise_dists_2d / bottom_pairwise_dists,
+                 pairwise_locs[..., 1] / pairwise_dists_2d,
+                 pairwise_locs[..., 0] / pairwise_dists_2d],
                 dim=3
             )
-            
+
         if self.config.spatial_dim == 4:
-            pairwise_locs = pairwise_locs[..., 1:]
-        return pairwise_locs
+            pairwise_locs = pairwise_locs[..., 1:]  # 如果空间维度为4，则移除第一个维度
+
+        return pairwise_locs  # 返回计算出的空间关系信息
 
     def forward(
-        self, txt_embeds, txt_masks, obj_embeds, obj_locs, obj_masks,
-        output_attentions=False, output_hidden_states=False, 
+            self, txt_embeds, txt_masks, obj_embeds, obj_locs, obj_masks,
+            output_attentions=False, output_hidden_states=False,
     ):
         if self.config.spatial_dec:
+            # 如果配置了空间解码器，计算对象间的空间位置关系
             pairwise_locs = self.calc_pairwise_locs(
-                obj_locs[:, :, :3], obj_locs[:, :, 3:], 
+                obj_locs[:, :, :3], obj_locs[:, :, 3:],
                 pairwise_rel_type=self.config.pairwise_rel_type
             )
+        out_embeds = obj_embeds  # 初始化输出嵌入为对象嵌入
+        all_hidden_states = [out_embeds]  # 存储所有隐藏状态
+        all_self_attn_matrices, all_cross_attn_matrices = [], []  # 存储所有自注意力和交叉注意力矩阵
 
-        out_embeds = obj_embeds
-        all_hidden_states = [out_embeds]
-        all_self_attn_matrices, all_cross_attn_matrices = [], []
         for i, layer in enumerate(self.layers):
             if self.config.obj_loc_encoding == 'diff_all':
+                # 如果每层的位置编码不同，从位置编码层获取位置嵌入
                 query_pos = self.loc_layers[i](obj_locs)
-                out_embeds = out_embeds + query_pos
+                out_embeds = out_embeds + query_pos  # 将位置嵌入加到输出嵌入上
             else:
                 query_pos = self.loc_layers[0](obj_locs)
                 if self.config.obj_loc_encoding == 'same_all':
-                    out_embeds = out_embeds + query_pos
+                    out_embeds = out_embeds + query_pos  # 如果所有层位置编码相同，加到输出嵌入上
                 else:
                     if i == 0:
-                        out_embeds = out_embeds + query_pos
+                        out_embeds = out_embeds + query_pos  # 如果只在第一层加位置编码，仅在第一层加
 
             if self.config.spatial_dec:
+                # 如果启用空间解码，调用解码器层处理嵌入和位置关系
                 out_embeds, self_attn_matrices, cross_attn_matrices = layer(
                     out_embeds, txt_embeds, pairwise_locs,
                     tgt_key_padding_mask=obj_masks.logical_not(),
                     memory_key_padding_mask=txt_masks.logical_not(),
                 )
             else:
+                # 如果不使用空间解码，调用解码器层处理嵌入
                 out_embeds, self_attn_matrices, cross_attn_matrices = layer(
                     out_embeds, txt_embeds,
                     tgt_key_padding_mask=obj_masks.logical_not(),
                     memory_key_padding_mask=txt_masks.logical_not(),
                 )
 
+            # 存储每层的输出和注意力矩阵
             all_hidden_states.append(out_embeds)
             all_self_attn_matrices.append(self_attn_matrices)
             all_cross_attn_matrices.append(cross_attn_matrices)
 
         outs = {
-            'obj_embeds': out_embeds,
+            'obj_embeds': out_embeds,  # 最终的对象嵌入输出
         }
         if output_hidden_states:
-            outs['all_hidden_states'] = all_hidden_states
+            outs['all_hidden_states'] = all_hidden_states  # 如果需要，输出所有隐藏状态
         if output_attentions:
-            outs['all_self_attns'] = all_self_attn_matrices
-            outs['all_cross_attns'] = all_cross_attn_matrices
-        return outs
+            outs['all_self_attns'] = all_self_attn_matrices  # 如果需要，输出所有自注意力矩阵
+            outs['all_cross_attns'] = all_cross_attn_matrices  # 如果需要，输出所有交叉注意力矩阵
+
+        return outs  # 返回所有输出

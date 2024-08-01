@@ -46,30 +46,36 @@ def freeze_bn(m):
 
 class ReferIt3DNet(nn.Module):
     def __init__(self, config, device):
-        # 首先调用super().__init__()来执行父类nn.Module的初始化操作
-        super().__init__()
-        # 创建config和device变量
-        self.config = config
-        self.device = device
+        super().__init__()  # 执行父类nn.Module的初始化操作
+        self.config = config  # 存储传入的配置信息
+        self.device = device  # 存储设备信息，用于模型的设备部署
 
-        config.obj_encoder.num_obj_classes = config.num_obj_classes
+        config.obj_encoder.num_obj_classes = config.num_obj_classes  # 设置对象编码器的类别数
+
+        # 根据配置中的模型类型初始化对象编码器
         if self.config.model_type == 'gtlabel':
-            self.obj_encoder = GTObjEncoder(config.obj_encoder, config.hidden_size)
+            self.obj_encoder = GTObjEncoder(config.obj_encoder, config.hidden_size)  # 如果是基于标签的，使用GTObjEncoder
         elif self.config.model_type == 'gtpcd':
-            self.obj_encoder = PcdObjEncoder(config.obj_encoder)
+            self.obj_encoder = PcdObjEncoder(config.obj_encoder)  # 如果是基于点云的，使用PcdObjEncoder
+
+        # 如果配置要求冻结对象编码器的参数
         if self.config.obj_encoder.freeze:
-            freeze_bn(self.obj_encoder)
+            freeze_bn(self.obj_encoder)  # 冻结批归一化层
             for p in self.obj_encoder.parameters():
-                p.requires_grad = False
+                p.requires_grad = False  # 设置这些参数不参与训练
+
+        # 如果配置要求冻结对象编码器的批归一化层
         if self.config.obj_encoder.freeze_bn:
             freeze_bn(self.obj_encoder)
 
+        # 如果配置中包含使用颜色编码器
         if self.config.obj_encoder.use_color_enc:
-            self.obj_color_encoder = ObjColorEncoder(config.hidden_size, config.obj_encoder.dropout)
+            self.obj_color_encoder = ObjColorEncoder(config.hidden_size, config.obj_encoder.dropout)  # 初始化颜色编码器
 
+        # 初始化文本编码器
         if self.config.txt_encoder.type == 'gru':
-            # glove embedding
-            self.txt_encoder = GloveGRUEncoder(config.hidden_size, config.txt_encoder.num_layers)
+            self.txt_encoder = GloveGRUEncoder(config.hidden_size,
+                                               config.txt_encoder.num_layers)  # 如果是GRU类型，使用GloveGRUEncoder
         else:
             txt_bert_config = BertConfig(
                 hidden_size=config.hidden_size,
@@ -78,43 +84,58 @@ class ReferIt3DNet(nn.Module):
             )
             self.txt_encoder = BertModel.from_pretrained(
                 r'/root/vil3dref-main/moxing/bert-base-uncased/pytorch_model.bin', config=txt_bert_config
-            )
+            )  # 否则，使用预训练的BERT模型
+
+        # 如果配置要求冻结文本编码器的参数
         if self.config.txt_encoder.freeze:
             for p in self.txt_encoder.parameters():
-                p.requires_grad = False
-    
+                p.requires_grad = False  # 设置这些参数不参与训练
+
+        # 初始化多模态编码器的配置
         mm_config = EasyDict(config.mm_encoder)
         mm_config.hidden_size = config.hidden_size
         mm_config.num_attention_heads = 12
         mm_config.dim_loc = config.obj_encoder.dim_loc
-        if self.config.mm_encoder.type == 'cmt':
-            self.mm_encoder = CMT(mm_config)
-        elif self.config.mm_encoder.type == 'mmt':
-            self.mm_encoder = MMT(mm_config)
 
+        # 根据配置选择多模态编码器的类型
+        if self.config.mm_encoder.type == 'cmt':
+            self.mm_encoder = CMT(mm_config)  # 如果是CMT类型，初始化CMT编码器
+        elif self.config.mm_encoder.type == 'mmt':
+            self.mm_encoder = MMT(mm_config)  # 如果是MMT类型，初始化MMT编码器
+
+        # 初始化多层感知机头部用于3D检测
         self.og3d_head = get_mlp_head(
-            config.hidden_size, config.hidden_size, 
+            config.hidden_size, config.hidden_size,
             1, dropout=config.dropout
         )
 
+        # 如果配置中包含对象3D分类损失
         if self.config.losses.obj3d_clf > 0:
             self.obj3d_clf_head = get_mlp_head(
-                config.hidden_size, config.hidden_size, 
+                config.hidden_size, config.hidden_size,
                 config.num_obj_classes, dropout=config.dropout
             )
+
+        # 如果配置中包含对象3D预分类损失
         if self.config.losses.obj3d_clf_pre > 0:
             self.obj3d_clf_pre_head = get_mlp_head(
                 config.hidden_size, config.hidden_size,
                 config.num_obj_classes, dropout=config.dropout
             )
-            if self.config.obj_encoder.freeze:
-                for p in self.obj3d_clf_pre_head.parameters():
-                    p.requires_grad = False
+
+        # 如果配置要求冻结对象编码器
+        if self.config.obj_encoder.freeze:
+            for p in self.obj3d_clf_pre_head.parameters():
+                p.requires_grad = False  # 设置这些参数不参与训练
+
+        # 如果配置中包含对象3D定位损失
         if self.config.losses.obj3d_reg > 0:
             self.obj3d_reg_head = get_mlp_head(
-                config.hidden_size, config.hidden_size, 
+                config.hidden_size, config.hidden_size,
                 3, dropout=config.dropout
             )
+
+        # 如果配置中包含文本分类损失
         if self.config.losses.txt_clf > 0:
             self.txt_clf_head = get_mlp_head(
                 config.hidden_size, config.hidden_size,
@@ -122,66 +143,72 @@ class ReferIt3DNet(nn.Module):
             )
 
     def prepare_batch(self, batch):
-        outs = {}
-        for key, value in batch.items():
-            if isinstance(value, torch.Tensor):
-                outs[key] = value.to(self.device)
+        outs = {}  # 初始化一个字典，用来存储处理后的数据
+        for key, value in batch.items():  # 遍历批次数据中的每个项
+            if isinstance(value, torch.Tensor):  # 检查值是否为张量
+                outs[key] = value.to(self.device)  # 如果是张量，将其转移到指定的设备（如GPU）
             else:
-                outs[key] = value
-        return outs
-        
-    def forward(
-        self, batch: dict, compute_loss=False, is_test=False,
-        output_attentions=False, output_hidden_states=False,
-    ) -> dict:
-        batch = self.prepare_batch(batch)
+                outs[key] = value  # 如果不是张量，直接保留原值
+        return outs  # 返回处理后的批次数据字典
 
+    def forward(
+            self, batch: dict, compute_loss=False, is_test=False,
+            output_attentions=False, output_hidden_states=False,
+    ) -> dict:
+        batch = self.prepare_batch(batch)  # 预处理批次数据，确保所有数据在正确的设备上
         if self.config.obj_encoder.freeze or self.config.obj_encoder.freeze_bn:
-            freeze_bn(self.obj_encoder)
-        obj_embeds = self.obj_encoder(batch['obj_fts'])
+            freeze_bn(self.obj_encoder)  # 如果需要，冻结对象编码器的批量归一化
+
+        obj_embeds = self.obj_encoder(batch['obj_fts'])  # 从对象特征获取对象嵌入
         if self.config.obj_encoder.freeze:
-            obj_embeds = obj_embeds.detach()
+            obj_embeds = obj_embeds.detach()  # 如果对象编码器被冻结，防止梯度回传
+
         if self.config.obj_encoder.use_color_enc:
-            obj_embeds = obj_embeds + self.obj_color_encoder(batch['obj_colors'])
+            obj_embeds = obj_embeds + self.obj_color_encoder(batch['obj_colors'])  # 如果使用颜色编码器，加入颜色嵌入
 
         txt_embeds = self.txt_encoder(
             batch['txt_ids'], batch['txt_masks'],
-        ).last_hidden_state
+        ).last_hidden_state  # 从文本编码器获取文本嵌入
+
         if self.config.txt_encoder.freeze:
-            txt_embeds = txt_embeds.detach()
+            txt_embeds = txt_embeds.detach()  # 如果文本编码器被冻结，防止梯度回传
 
         out_embeds = self.mm_encoder(
-            txt_embeds, batch['txt_masks'], 
+            txt_embeds, batch['txt_masks'],
             obj_embeds, batch['obj_locs'], batch['obj_masks'],
-            output_attentions=output_attentions, 
+            output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
-        )
-        
-        og3d_logits = self.og3d_head(out_embeds['obj_embeds']).squeeze(2)
-        og3d_logits.masked_fill_(batch['obj_masks'].logical_not(), -float('inf'))
-        result = {
-            'og3d_logits': og3d_logits,
-        }
+        )  # 使用多模态编码器处理嵌入和注意力输出
+
+        og3d_logits = self.og3d_head(out_embeds['obj_embeds']).squeeze(2)  # 使用多层感知机头部获取对象检测逻辑回归输出
+        og3d_logits.masked_fill_(batch['obj_masks'].logical_not(), -float('inf'))  # 掩盖无效对象的输出
+
+        result = {'og3d_logits': og3d_logits}  # 存储对象检测结果
+
         if output_attentions:
-            result['all_cross_attns'] = out_embeds['all_cross_attns']
-            result['all_self_attns'] = out_embeds['all_self_attns']
+            result['all_cross_attns'] = out_embeds['all_cross_attns']  # 如果需要输出注意力，添加交叉注意力矩阵
+            result['all_self_attns'] = out_embeds['all_self_attns']  # 添加自注意力矩阵
+
         if output_hidden_states:
-            result['all_hidden_states'] = out_embeds['all_hidden_states']
-        
+            result['all_hidden_states'] = out_embeds['all_hidden_states']  # 如果需要输出隐藏状态，添加所有隐藏状态
+
         if self.config.losses.obj3d_clf > 0:
-            result['obj3d_clf_logits'] = self.obj3d_clf_head(out_embeds['obj_embeds'])
+            result['obj3d_clf_logits'] = self.obj3d_clf_head(out_embeds['obj_embeds'])  # 如果有对象分类任务，获取分类结果
+
         if self.config.losses.obj3d_reg > 0:
-            result['obj3d_loc_preds'] = self.obj3d_reg_head(out_embeds['obj_embeds'])
+            result['obj3d_loc_preds'] = self.obj3d_reg_head(out_embeds['obj_embeds'])  # 如果有对象位置回归任务，获取位置预测
+
         if self.config.losses.obj3d_clf_pre > 0:
-            result['obj3d_clf_pre_logits'] = self.obj3d_clf_pre_head(obj_embeds)
+            result['obj3d_clf_pre_logits'] = self.obj3d_clf_pre_head(obj_embeds)  # 如果有对象预分类任务，获取预分类结果
+
         if self.config.losses.txt_clf > 0:
-            result['txt_clf_logits'] = self.txt_clf_head(txt_embeds[:, 0])
-        
+            result['txt_clf_logits'] = self.txt_clf_head(txt_embeds[:, 0])  # 如果有文本分类任务，获取文本分类结果
+
         if compute_loss:
-            losses = self.compute_loss(result, batch)
-            return result, losses
-        
-        return result
+            losses = self.compute_loss(result, batch)  # 如果需要计算损失，执行损失计算
+            return result, losses  # 返回结果和损失
+
+        return result  # 如果不计算损失，只返回结果
 
     # 这个函数compute_loss是用于计算模型在给定批次数据上的损失。
     # 它接收两个参数：result和batch。result包含了模型的输出，而batch包含了与这些输出相对应的真实标签。
