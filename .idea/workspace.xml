@@ -15,6 +15,15 @@
       <change beforePath="$PROJECT_DIR$/og3d_src/data/utterances.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/data/utterances.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/og3d_src/model/backbone/point_net_pp.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/backbone/point_net_pp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/og3d_src/model/cmt_module.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/cmt_module.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/ball_query.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/ball_query.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/ball_query_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/ball_query_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/bindings.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/bindings.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/group_points.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/group_points.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/group_points_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/group_points_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/interpolate.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/interpolate.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/interpolate_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/interpolate_gpu.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/sampling.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/sampling.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/sampling_gpu.cu" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/_ext_src/src/sampling_gpu.cu" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_modules.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_modules.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_test.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/og3d_src/model/external_tools/pointnet2/pointnet2_utils.py" afterDir="false" />
@@ -79,7 +88,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "settings.editor.selected.configurable": "configurable.group.language",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -107,6 +116,7 @@
       <workItem from="1722522560150" duration="4722000" />
       <workItem from="1722529060742" duration="37000" />
       <workItem from="1722530317152" duration="680000" />
+      <workItem from="1722531698963" duration="10160000" />
     </task>
     <servers />
   </component>

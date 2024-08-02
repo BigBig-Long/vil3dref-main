@@ -30,7 +30,7 @@ def process_per_scan(scan_id, scan_dir, out_dir, apply_global_alignment=True, is
         coords = np.ascontiguousarray(points[:, :3])  # 获取坐标信息
         colors = np.ascontiguousarray(points[:, 3:6])  # 获取颜色信息
 
-    # # TODO: 对坐标和颜色进行归一化（这段代码被注释掉了）
+    # TODO: 对坐标和颜色进行归一化（这段代码被注释掉了）
     # coords = coords - coords.mean(0)  # 对坐标进行中心化
     # colors = colors / 127.5 - 1  # 对颜色进行归一化
 
@@ -116,9 +116,6 @@ def process_per_scan(scan_id, scan_dir, out_dir, apply_global_alignment=True, is
             (coords, colors, sem_labels, instance_labels),
             os.path.join(pcd_out_dir, '%s.pth' % (scan_id))
         )
-
-import argparse
-from pprint import pprint
 
 def parse_args():
     # 创建一个 ArgumentParser 对象，它将自动生成帮助和用法提示
